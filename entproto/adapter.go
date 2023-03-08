@@ -17,7 +17,6 @@ package entproto
 import (
 	"errors"
 	"fmt"
-	"log"
 	"path"
 	"path/filepath"
 	"strings"
@@ -139,8 +138,6 @@ func (a *Adapter) parse() error {
 					GoPackage: &goPkg,
 				},
 			}
-
-			log.Println("Name", *name)
 
 			tString := descriptorpb.FieldDescriptorProto_TYPE_STRING
 			tInt64 := descriptorpb.FieldDescriptorProto_TYPE_INT64
@@ -569,6 +566,35 @@ func toProtoFieldDescriptor(f *gen.Field) (*descriptorpb.FieldDescriptorProto, e
 	if typeDetails.repeated {
 		fieldDesc.Label = &repeatedFieldLabel
 	}
+	return fieldDesc, nil
+}
+
+func toProtoFieldFilterDescriptor(f *gen.Field) (*descriptorpb.FieldDescriptorProto, error) {
+	t := descriptorpb.FieldDescriptorProto_TYPE_MESSAGE
+
+	fieldDesc := &descriptorpb.FieldDescriptorProto{
+		Name: &f.Name,
+		Type: &t,
+	}
+	fann, err := extractFieldAnnotation(f)
+	if err != nil {
+		return nil, err
+	}
+	if !fann.Filterable {
+		return nil, errors.New("entproto: field is not filterable")
+	}
+
+	cfg, ok := typeMap[f.Type.Type]
+
+	if !ok || cfg.unsupported {
+		return nil, unsupportedTypeError{Type: f.Type}
+	}
+
+	if cfg.optionalType == "" {
+		return nil, unsupportedTypeError{Type: f.Type}
+	}
+	fieldDesc.TypeName = &cfg.optionalType
+
 	return fieldDesc, nil
 }
 

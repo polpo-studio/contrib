@@ -36,9 +36,10 @@ func Field(num int, options ...FieldOption) schema.Annotation {
 }
 
 type pbfield struct {
-	Number   int
-	Type     descriptorpb.FieldDescriptorProto_Type
-	TypeName string
+	Number     int
+	Type       descriptorpb.FieldDescriptorProto_Type
+	TypeName   string
+	Filterable bool
 }
 
 func (f pbfield) Name() string {
@@ -64,6 +65,13 @@ func Type(typ descriptorpb.FieldDescriptorProto_Type) FieldOption {
 func TypeName(n string) FieldOption {
 	return func(p *pbfield) {
 		p.TypeName = n
+	}
+}
+
+// Filterable sets the field as filterable in the generated service.
+func Filterable(on bool) FieldOption {
+	return func(p *pbfield) {
+		p.Filterable = on
 	}
 }
 

@@ -191,36 +191,48 @@ func (a *Adapter) genMethodProtos(genType *gen.Type, m Method) (methodResources,
 		}
 
 		methodName = "List" + genType.Name
-		int32FieldType := descriptorpb.FieldDescriptorProto_TYPE_INT32
-		stringFieldType := descriptorpb.FieldDescriptorProto_TYPE_STRING
+		uint64FieldType := descriptorpb.FieldDescriptorProto_TYPE_UINT64
 		input.Name = strptr(fmt.Sprintf("List%sRequest", genType.Name))
 		input.Field = []*descriptorpb.FieldDescriptorProto{
 			{
 				Name:   strptr("page_size"),
 				Number: int32ptr(1),
-				Type:   &int32FieldType,
+				Type:   &uint64FieldType,
 			},
 			{
-				Name:   strptr("page_token"),
+				Name:   strptr("page_no"),
 				Number: int32ptr(2),
-				Type:   &stringFieldType,
+				Type:   &uint64FieldType,
 			},
 		}
+
+		for idx, ty := range genType.Fields {
+			details, err := toProtoFieldFilterDescriptor(ty)
+			if err != nil {
+				// skip not filterable fields
+			} else {
+				if details != nil {
+					details.Number = int32ptr(int32(idx + 2))
+					input.Field = append(input.Field, details)
+				}
+			}
+		}
+
 		outputName = fmt.Sprintf("List%sResponse", genType.Name)
 		output := &descriptorpb.DescriptorProto{
 			Name: &outputName,
 			Field: []*descriptorpb.FieldDescriptorProto{
 				{
-					Name:     strptr(snake(genType.Name) + "_list"),
+					Name:     strptr("list"),
 					Number:   int32ptr(1),
 					Label:    &repeatedFieldLabel,
 					Type:     &protoMessageFieldType,
 					TypeName: strptr(genType.Name),
 				},
 				{
-					Name:   strptr("next_page_token"),
+					Name:   strptr("total"),
 					Number: int32ptr(2),
-					Type:   &stringFieldType,
+					Type:   &uint64FieldType,
 				},
 			},
 		}
