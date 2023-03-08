@@ -31,7 +31,7 @@ type MessageOption func(msg *message)
 func Message(opts ...MessageOption) schema.Annotation {
 	m := message{
 		Generate: true,
-		Package:  "entpb",
+		Package:  "pb",
 	}
 	for _, apply := range opts {
 		apply(&m)

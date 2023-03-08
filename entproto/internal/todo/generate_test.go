@@ -35,7 +35,7 @@ func TestGenerate(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	err = entproto.Generate(graph)
+	err = entproto.Generate(graph, nil)
 	require.NoError(t, err)
 
 	bytes, err := os.ReadFile(filepath.Join(tgt, "proto", "entpb", "entpb.proto"))

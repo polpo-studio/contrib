@@ -17,6 +17,7 @@ package main
 import (
 	"flag"
 	"log"
+	"os"
 
 	"entgo.io/contrib/entproto"
 	"entgo.io/ent/entc"
@@ -26,16 +27,27 @@ import (
 func main() {
 	var (
 		schemaPath = flag.String("path", "", "path to schema directory")
+		pbPath     = flag.String("pb_out", "", "path to output directory for generated pb.go files")
+		pbName     = flag.String("pb_name", "", "name of the generated pb.go files")
 	)
 	flag.Parse()
 	if *schemaPath == "" {
 		log.Fatal("entproto: must specify schema path. use entproto -path ./ent/schema")
 	}
+	if *pbPath == "" {
+		log.Fatal("entproto: must specify path to output directory for generated pb.go files. use entproto -pb_out ./entpb")
+	}
+
+	entproto.SetDefaultProtoServiceName(*pbName)
+
 	graph, err := entc.LoadGraph(*schemaPath, &gen.Config{})
 	if err != nil {
 		log.Fatalf("entproto: failed loading ent graph: %v", err)
 	}
-	if err := entproto.Generate(graph); err != nil {
+	if err := entproto.Generate(graph, pbPath); err != nil {
 		log.Fatalf("entproto: failed generating protos: %s", err)
+	}
+	if os.Rename(*pbPath+"pb/pb.proto", *pbPath+"pb/"+*pbName+".proto"); err != nil {
+		log.Fatalf("entproto: failed renaming file: %s", err)
 	}
 }
