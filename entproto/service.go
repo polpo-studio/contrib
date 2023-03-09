@@ -160,7 +160,7 @@ func (a *Adapter) genMethodProtos(genType *gen.Type, m Method) (methodResources,
 		input.Field = []*descriptorpb.FieldDescriptorProto{
 			idField,
 		}
-		for idx, ty := range genType.Fields {
+		for _, ty := range genType.Fields {
 			details, err := extractProtoTypeOptionalDetails(ty)
 			if err != nil {
 				fmt.Print(err)
@@ -168,11 +168,26 @@ func (a *Adapter) genMethodProtos(genType *gen.Type, m Method) (methodResources,
 				if details.messageName != "" {
 					input.Field = append(input.Field, &descriptorpb.FieldDescriptorProto{
 						Name:     strptr(snake(ty.Name)),
-						Number:   int32ptr(int32(idx + 2)),
+						Number:   int32ptr(int32(len(input.Field) + 1)),
 						Type:     &details.protoType,
 						TypeName: &details.messageName,
 					})
 				}
+			}
+		}
+		for _, e := range genType.Edges {
+			if _, ok := e.Annotations[SkipAnnotation]; ok {
+				continue
+			}
+
+			descriptor, err := a.extractEdgeFieldDescriptor(genType, e)
+			if err != nil {
+				continue
+			}
+			if descriptor != nil {
+				//msg.Field = append(msg.Field, descriptor)
+				descriptor.Number = int32ptr(int32(len(input.Field) + 1))
+				input.Field = append(input.Field, descriptor)
 
 			}
 		}
