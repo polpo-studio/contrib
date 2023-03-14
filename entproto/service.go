@@ -128,6 +128,7 @@ func (a *Adapter) genMethodProtos(genType *gen.Type, m Method) (methodResources,
 		return methodResources{}, err
 	}
 	protoMessageFieldType := descriptorpb.FieldDescriptorProto_TYPE_MESSAGE
+	protoBoolFieldType := descriptorpb.FieldDescriptorProto_TYPE_BOOL
 	repeatedFieldLabel := descriptorpb.FieldDescriptorProto_LABEL_REPEATED
 	singleMessageField := &descriptorpb.FieldDescriptorProto{
 		Name:     strptr(snake(genType.Name)),
@@ -146,6 +147,15 @@ func (a *Adapter) genMethodProtos(genType *gen.Type, m Method) (methodResources,
 		input.Field = []*descriptorpb.FieldDescriptorProto{
 			idField,
 		}
+
+		for _, ty := range genType.Edges {
+			input.Field = append(input.Field, &descriptorpb.FieldDescriptorProto{
+				Name:   strptr("with_" + snake(ty.Name)),
+				Number: int32ptr(int32(len(input.Field) + 1)),
+				Type:   &protoBoolFieldType,
+			})
+		}
+
 		outputName = genType.Name
 		messages = append(messages, input)
 	case MethodCreate:
@@ -221,16 +231,24 @@ func (a *Adapter) genMethodProtos(genType *gen.Type, m Method) (methodResources,
 			},
 		}
 
-		for idx, ty := range genType.Fields {
+		for _, ty := range genType.Fields {
 			details, err := toProtoFieldFilterDescriptor(ty)
 			if err != nil {
 				// skip not filterable fields
 			} else {
 				if details != nil {
-					details.Number = int32ptr(int32(idx + 2))
+					details.Number = int32ptr(int32(len(input.Field) + 1))
 					input.Field = append(input.Field, details)
 				}
 			}
+		}
+
+		for _, ty := range genType.Edges {
+			input.Field = append(input.Field, &descriptorpb.FieldDescriptorProto{
+				Name:   strptr("with_" + snake(ty.Name)),
+				Number: int32ptr(int32(len(input.Field) + 1)),
+				Type:   &protoBoolFieldType,
+			})
 		}
 
 		outputName = fmt.Sprintf("List%sResponse", genType.Name)
